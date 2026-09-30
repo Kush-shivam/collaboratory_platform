@@ -170,15 +170,13 @@ export default function Dashboard() {
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
               <Link
   href="/projects/new"
-  className="mt-6 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-medium transition hover:bg-blue-700"
+  className="mt-6 inline-flex rounded-xl bg-blue-600 px-6 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
 >
   Create your first project
 </Link>
             </p>
 
-            <button className="mt-6 rounded-xl bg-blue-600 px-6 py-3 text-sm font-medium transition hover:bg-blue-700">
-              Create your first project
-            </button>
+            
 
           </div>
 

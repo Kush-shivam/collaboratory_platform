@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Navbar from "../components/Navbar";
 
 export default function Home() {
@@ -18,14 +19,12 @@ export default function Home() {
           </div>
 
           <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
-
             Build together.
             <br />
 
             <span className="text-blue-500">
               Create without limits.
             </span>
-
           </h1>
 
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-slate-400">
@@ -33,15 +32,24 @@ export default function Home() {
             edit, manage and collaborate on projects in real time.
           </p>
 
+          {/* HERO BUTTONS */}
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
 
-            <button className="rounded-xl bg-blue-600 px-8 py-4 font-medium transition hover:bg-blue-700">
+            {/* START COLLABORATING */}
+            <Link
+              href="/login"
+              className="rounded-xl bg-blue-600 px-8 py-4 font-medium transition hover:bg-blue-700"
+            >
               Start Collaborating
-            </button>
+            </Link>
 
-            <button className="rounded-xl border border-white/10 px-8 py-4 font-medium text-slate-300 transition hover:bg-white/5">
+            {/* EXPLORE PLATFORM */}
+            <Link
+              href="#features"
+              className="rounded-xl border border-white/10 px-8 py-4 font-medium text-slate-300 transition hover:bg-white/5"
+            >
               Explore Platform
-            </button>
+            </Link>
 
           </div>
 
