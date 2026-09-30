@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import CodeEditor from "@/components/editor/CodeEditor";
+import { supabase } from "@/src/lib/supabase/client";
 import {
   ArrowLeft,
   FileText,
@@ -12,9 +15,21 @@ import {
 } from "lucide-react";
 
 export default function DocumentsPage() {
+  const params = useParams();
+  const projectId = params.id as string;
+
   const [activeDocument, setActiveDocument] = useState("README");
-  const [content, setContent] = useState(
-    `# Welcome to Collaboratory
+  const [content, setContent] = useState("");
+  const [documentId, setDocumentId] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+
+  const documents = ["README", "Project Notes"];
+
+  // Default README content
+  const defaultContent = `# Welcome to Collaboratory
 
 This is your project document.
 
@@ -29,26 +44,145 @@ Add your project information here.
 - Create project structure
 - Add collaborators
 - Start collaborating
-`
-  );
+`;
 
-  const documents = [
-    "README",
-    "Project Notes",
-  ];
+  // Load README from Supabase
+  useEffect(() => {
+    const loadDocument = async () => {
+      setLoading(true);
+      setSaveMessage("");
+
+      try {
+        // Check logged-in user
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          setSaveMessage("Please log in first.");
+          setLoading(false);
+          return;
+        }
+
+        // Look for README belonging to this project
+        const { data, error } = await supabase
+          .from("documents")
+          .select("*")
+          .eq("project_id", projectId)
+          .eq("name", "README")
+          .eq("created_by", user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error loading document:", error);
+          setSaveMessage("Failed to load document.");
+          setLoading(false);
+          return;
+        }
+
+        if (data) {
+          // Existing document
+          setDocumentId(data.id);
+          setContent(data.content);
+        } else {
+          // No document yet
+          setContent(defaultContent);
+        }
+      } catch (error) {
+        console.error(error);
+        setSaveMessage("Something went wrong.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (projectId) {
+      loadDocument();
+    }
+  }, [projectId]);
+
+  // Save document
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveMessage("");
+
+    try {
+      // Get logged-in user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setSaveMessage("Please log in first.");
+        setSaving(false);
+        return;
+      }
+
+      if (documentId) {
+        // Update existing document
+        const { error } = await supabase
+          .from("documents")
+          .update({
+            content: content,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", documentId)
+          .eq("created_by", user.id);
+
+        if (error) {
+          console.error("Error updating document:", error);
+          setSaveMessage("Failed to save.");
+          setSaving(false);
+          return;
+        }
+      } else {
+        // Create new document
+        const { data, error } = await supabase
+          .from("documents")
+          .insert({
+            project_id: projectId,
+            name: "README",
+            content: content,
+            created_by: user.id,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error creating document:", error);
+          setSaveMessage("Failed to save.");
+          setSaving(false);
+          return;
+        }
+
+        setDocumentId(data.id);
+      }
+
+      setSaveMessage("Saved successfully");
+
+      // Remove message after 2 seconds
+      setTimeout(() => {
+        setSaveMessage("");
+      }, 2000);
+    } catch (error) {
+      console.error(error);
+      setSaveMessage("Something went wrong.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <main className="flex min-h-screen flex-col bg-slate-950 text-white">
 
       {/* HEADER */}
       <header className="border-b border-white/10">
-
         <div className="flex h-20 items-center justify-between px-6">
 
           <div className="flex items-center gap-5">
 
             <Link
-              href="/dashboard"
+              href={`/projects/${projectId}`}
               className="rounded-lg p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
             >
               <ArrowLeft size={20} />
@@ -76,7 +210,6 @@ Add your project information here.
 
           </div>
 
-
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-2">
 
@@ -95,10 +228,13 @@ Add your project information here.
             </button>
 
             <button
-              className="ml-2 flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+              onClick={handleSave}
+              disabled={saving || loading}
+              className="ml-2 flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Save size={16} />
-              Save
+
+              {saving ? "Saving..." : "Save"}
             </button>
 
           </div>
@@ -107,6 +243,12 @@ Add your project information here.
 
       </header>
 
+      {/* SAVE MESSAGE */}
+      {saveMessage && (
+        <div className="absolute right-6 top-24 z-50 rounded-lg border border-white/10 bg-slate-900 px-4 py-2 text-sm text-slate-300 shadow-lg">
+          {saveMessage}
+        </div>
+      )}
 
       {/* DOCUMENT WORKSPACE */}
       <div className="flex flex-1">
@@ -128,7 +270,6 @@ Add your project information here.
             </button>
 
           </div>
-
 
           <div className="space-y-1 p-3">
 
@@ -156,7 +297,6 @@ Add your project information here.
 
         </aside>
 
-
         {/* EDITOR */}
         <section className="flex min-w-0 flex-1 flex-col">
 
@@ -174,14 +314,22 @@ Add your project information here.
 
           </div>
 
-
           {/* EDITOR AREA */}
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            spellCheck={false}
-            className="min-h-[calc(100vh-128px)] flex-1 resize-none border-none bg-[#020617] p-8 font-mono text-sm leading-7 text-slate-300 outline-none"
-          />
+          <div className="min-h-[500px] flex-1">
+
+            {loading ? (
+              <div className="flex h-[500px] items-center justify-center text-slate-500">
+                Loading document...
+              </div>
+            ) : (
+              <CodeEditor
+                value={content}
+                onChange={setContent}
+                language="markdown"
+              />
+            )}
+
+          </div>
 
         </section>
 
