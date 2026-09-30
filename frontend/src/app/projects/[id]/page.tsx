@@ -238,11 +238,22 @@ export default function ProjectPage() {
             {/* Workspace cards */}
             <div className="mt-10 grid gap-5 md:grid-cols-3">
 
-              <WorkspaceCard
-                icon={<FileText size={22} />}
-                title="Documents"
-                description="Create and edit project documents."
-              />
+              <Link
+  href={`/projects/${projectId}/documents`}
+  className="group rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-left transition hover:-translate-y-1 hover:border-blue-500/30 hover:bg-white/[0.05]"
+>
+  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
+    <FileText size={22} />
+  </div>
+
+  <h3 className="mt-5 font-semibold text-white">
+    Documents
+  </h3>
+
+  <p className="mt-2 text-sm leading-6 text-slate-500">
+    Create and edit project documents.
+  </p>
+</Link>
 
               <WorkspaceCard
                 icon={<Users size={22} />}
